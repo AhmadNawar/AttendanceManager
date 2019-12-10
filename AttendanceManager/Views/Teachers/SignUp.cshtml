@@ -1,0 +1,38 @@
+﻿
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@model AttendanceManager.Models.TeacherSignUpVm
+
+<h4 class="text-center mt-3">Sign Up to be Able to Create Lectures</h4>
+
+<div class="row d-flex justify-content-center">
+    <div class="col-md-6">
+        @using (Html.BeginForm("SignUp", "Teachers", FormMethod.Post))
+        {
+            <div class="row justify-content-center mt-2">
+                <div class="col-2">
+                    @Html.LabelFor(x=>x.Email, new { @class = "d-block"  })
+                    @Html.LabelFor(x=>x.Password, new { @class = "d-block" })
+                    @Html.LabelFor(x=>x.ConfirmPassword, new { @class = "d-block" })
+                </div>
+                <div class="col-4">
+                    @Html.EditorFor(x => x.Email , new { htmlAttributes = new { @class = "ml-2" } })
+                    @Html.EditorFor(x => x.Password, new { htmlAttributes = new{ @class = "ml-2 mt-2" } })
+                    @Html.EditorFor(x => x.ConfirmPassword, new { htmlAttributes = new { @class = "ml-2 mt-2" } })
+                    
+                </div>
+            </div>
+
+            <input type="submit" value="Sign up" class="btn btn-success d-block mx-auto mt-2" />
+        }
+        @if (ViewBag.Message != null)
+        {
+            <p class="text-center alert-danger mt-2">@ViewBag.Message</p>
+        }
+    </div>
+</div>
+
+
+

@@ -1,0 +1,33 @@
+﻿
+@{
+                /**/
+
+                Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@using Microsoft.Ajax.Utilities
+@model AttendanceManager.Models.SessionLoginVm
+
+<h2>Enter your info to join Lecture: @Model.SessionKey </h2>
+
+@using (Html.BeginForm("JoinSession", "Sessions", FormMethod.Post))
+{
+    @Html.LabelFor(x => x.StudentId)
+    @Html.EditorFor(x => x.StudentId)
+
+    @Html.LabelFor(x => x.StudentFirstName)
+    @Html.EditorFor(x => x.StudentFirstName)
+
+    @Html.LabelFor(x => x.StudentLastName)
+    @Html.EditorFor(x => x.StudentLastName)
+
+    @Html.HiddenFor(x=>x.SessionKey)
+    <input type="submit" value="Enter" class="btn btn-success" />
+
+}
+
+@if (!Model.Works.IsNullOrWhiteSpace())
+{
+    <p>@Model.Works</p>
+
+}
+
