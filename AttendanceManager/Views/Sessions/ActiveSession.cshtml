@@ -1,9 +1,122 @@
-﻿
+﻿@using System.Configuration
+@model AttendanceManager.Models.ActiveSessionVm
 @{
     ViewBag.Title = "ActiveSession";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Current Lecture: @ViewBag.session</h2>
-<h4>List of student</h4>
+<h2>Current Lecture: @Model.SessionKey</h2>
+<h5 class="mt-2">List of students:</h5>
+<div class="row">
+    <div class="col-6">
+        <div class="list-group" id="studentContainer">
+            @foreach (string student in Model.Students)
+            {
+                <a href="#" class="list-group-item list-group-item-action">
+                    @student
+                </a>
+            }
+        </div>
+    </div>
+    <div class="col-6" id="btnList">
+        <button class="float-right btn btn-success" id="refreshBtn">Refresh</button>
+        <button class="float-right btn btn-info mr-2" id="closeBtn">Close Lecture For Registration</button>
+        <span class="float-none"></span>
+    </div>
+</div>
+<div class="row">
+    <div class="col-3">
+        <button class="btn btn-danger mt-2" id="terminateBtn">End Lecture</button>
+    </div>
+</div>
 
+<script>
+    $(document).ready(function () {
+        /*TODO: Take the case if the user lost or deleted his token while in this page into account
+         TODO: Maybe redirect him to login page*/
+        /* TODO: Move reading the token to javascript instead of sending it with the model VERY IMPORTANT */
+        var apiUrl = "@ConfigurationManager.AppSettings["ApiUrl"]";
+        var sessionKey = "@Model.SessionKey";
+        var token = "@ViewBag.token";
+        var studentView = "<a href='#' class='list-group-item list-group-item-action'>";
+        $("#refreshBtn").click(() => {
+            $.ajax({
+                url: apiUrl + 'lecture/find?session_key=' + sessionKey,
+                method: "get",
+                dataType: "json",
+                crossDomain: true,
+                contentType: "application/json; charset=utf-8",
+                cache: false,
+                beforeSend: function(xhr) {
+                    /* Authorization header */
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                },
+                success: function(data) {
+                    $("#studentContainer").empty();
+                    for (var i = 0; i < data.length; i++) {
+                        $("#studentContainer").append(studentView + data[i].name + "</a>");
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $("#btnList").append("<p class='alert-danger'>An error was encountered, please try again.</p>");
+                }
+            });
+        });
+        $("#closeBtn").click(() => {
+            $.ajax({
+                url: apiUrl + 'lecture/user/locked?session_key=' + sessionKey,
+                method: "post",
+                dataType: "json",
+                crossDomain: true,
+                contentType: "application/json; charset=utf-8",
+                cache: false,
+                beforeSend: function(xhr) {
+                    /* Authorization header */
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                },
+                success: function(data) {
+                    $("#btnList").find("p").remove();
+                    if (data === true) {
+                        $("#btnList")
+                            .append("<p class='alert-danger p-2'>The lecture is now closed for registration.</p>");
+                    } else {
+                        $("#btnList")
+                            .append("<p class='alert-danger p-2'>The lecture is now open for registration.</p>");
+                    }
+                   
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $("#btnList").append("<p class='alert-danger'>An error was encountered, please try again.</p>");
+                }
+            });
+        });
+        $("#terminateBtn").click(() => {
+            $.ajax({
+                url: apiUrl + 'lecture/attendance/list?session_key=' + sessionKey,
+                method: "get",
+                dataType: "json",
+                crossDomain: true,
+                contentType: "text/csv",
+                cache: false,
+                beforeSend: function (xhr) {
+                    /* Authorization header */
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                },
+                success: function (data) {
+                    $("#btnList").find("p").remove();
+                    if (data === true) {
+                        $("#btnList")
+                            .append("<p class='alert-danger p-2'>The lecture is now closed for registration.</p>");
+                    } else {
+                        $("#btnList")
+                            .append("<p class='alert-danger p-2'>The lecture is now open for registration.</p>");
+                    }
+
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $("#btnList").append("<p class='alert-danger'>An error was encountered, please try again.</p>");
+                }
+            });
+        });
+    })
+</script>

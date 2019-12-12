@@ -23,7 +23,7 @@ namespace AttendanceManager
                 "~/Scripts/umd/popper.min.js",
                       "~/Scripts/bootstrap.js"));
             bundles.Add(new ScriptBundle("~/bundles/site").Include(
-                "~/Scripts/site.js"));
+                "~/Scripts/Site.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",

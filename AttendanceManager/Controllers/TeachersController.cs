@@ -41,7 +41,7 @@ namespace AttendanceManager.Controllers
                     var body = await response.Content.ReadAsStringAsync();
                     var token = JObject.Parse(body);
                     Response.Cookies["token"].Value = token["token"].ToString();
-                    Response.Cookies["token"].Expires = DateTime.Now.AddHours(6); // add expiry time
+                    Response.Cookies["token"].Expires = DateTime.Now.AddDays(1); // add expiry time
                 }
                 return RedirectToAction("GetLectures", "Sessions");
             }
@@ -77,7 +77,7 @@ namespace AttendanceManager.Controllers
                     var body = await response.Content.ReadAsStringAsync();
                     var token = JObject.Parse(body);
                     Response.Cookies["token"].Value = token["token"].ToString();
-                    Response.Cookies["token"].Expires = DateTime.Now.AddHours(6); // add expiry time
+                    Response.Cookies["token"].Expires = DateTime.Now.AddDays(1); // add expiry time
                 }
                 return RedirectToAction("GetLectures", "Sessions");
             }

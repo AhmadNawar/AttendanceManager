@@ -19,14 +19,16 @@ namespace AttendanceManager.Controllers
         public string BaseUrl { get; set; } = ConfigurationManager.AppSettings["ApiUrl"];
 
         
-        public ActionResult Index(string sessionKey)
+        public async Task<ActionResult> Index(string sessionKey)
         {
             if (sessionKey == null)
             {
                 ViewBag.Message = "This session either ended or doesn't exist";
                 return RedirectToAction("Index", "Home");
             }
+
             // TODO: Check if session exist, if no return user to index
+
             var session = new SessionLoginVm
             {
                 SessionKey = sessionKey
@@ -41,12 +43,13 @@ namespace AttendanceManager.Controllers
         
             using (var client = new HttpClient())
             {
-                var url = BaseUrl + "lecture";
+                var url = BaseUrl + "student";
                 var data = new
                     {session_key = session.SessionKey, stid = session.StudentId, name = session.StudentFirstName};
-               var result = await client.PutAsync(url, data.AsJson());
-               session.Works = result.StatusCode.ToString();
+               var result = await client.PostAsync(url, data.AsJson());
 
+               session.Works = !result.IsSuccessStatusCode ? "Failed to join lecture, try again later" : "Joined Lecture Successfully";
+               
             }
 
             return View(session);
@@ -54,44 +57,68 @@ namespace AttendanceManager.Controllers
 
         public ActionResult Create()
         {
-            if (Request.Cookies["token"].Value == null)
-            {
-                TempData["message"] = "You need to login to be able to create a lecture";
-                return RedirectToAction("Login", "Teachers");
-            }
-            return View();
+            if (Request.Cookies["token"]?.Value != null) return View();
+            TempData["message"] = "You need to login to be able to create a lecture";
+            return RedirectToAction("Login", "Teachers");
         }
 
         [HttpPost]
         public async Task<ActionResult> Create(SessionCreateVm session)
         {
-            if (Request.Cookies["token"].Value == null)
+            if (Request.Cookies["token"]?.Value != null)
             {
-                TempData["message"] = "You need to login to be able to create a lecture";
-                return RedirectToAction("Login", "Teachers");
-            }
+                var token = Request.Cookies["token"].Value;
+                using (var client = new HttpClient())
+                {
+                    var url = BaseUrl + "lecture";
+                    var data = new
+                        {title = session.Title};
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    var result = await client.PostAsync(url, data.AsJson());
+                    var body = await result.Content.ReadAsStringAsync();
+                    var responseData = JObject.Parse(body);
+                    session.SessionKey = responseData["session_key"].ToString();
+                }
 
-            var token = Request.Cookies["token"].Value;
-            using (var client = new HttpClient())
-            {
-                var url = BaseUrl + "lecture";
-                var data = new
-                    {title = session.Title};
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                var result = await client.PostAsync(url, data.AsJson());
-                var body = await result.Content.ReadAsStringAsync();
-                var responseData = JObject.Parse(body);
-                session.SessionKey = responseData["session_key"].ToString();
+                return RedirectToAction("ActiveSession", "Sessions", new {sessionKey=session.SessionKey});
             }
-
-            return RedirectToAction("ActiveSession", "Sessions", new {session_key=session.SessionKey});
+            TempData["message"] = "You need to login to be able to create a lecture";
+            return RedirectToAction("Login", "Teachers");
+            
         }
 
-        public async Task<ActionResult> ActiveSession(string session_key)
+        public async Task<ActionResult> ActiveSession(string sessionKey)
         {
             /*TODO: Check if user logged in: Send request to check if session exist, get the title, load view with list of student*/
-            ViewBag.session = session_key;
-            return View();
+            if (Request.Cookies["token"]?.Value != null)
+            {
+                var token = Request.Cookies["token"].Value;
+                var model = new ActiveSessionVm
+                {
+                    SessionKey = sessionKey,
+                    Students = new List<string>()
+                };
+            
+           
+                using (var client = new HttpClient())
+                {
+                    var url = BaseUrl + "lecture/find?session_key=" + sessionKey;
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    var result = await client.GetAsync(url);
+                    var body = await result.Content.ReadAsStringAsync();
+                    var responseData = JArray.Parse(body);
+                    foreach (var student in responseData)
+                    {
+                        model.Students.Add(student["name"].ToString());
+                    }
+                }
+
+                // TODO: MOVE THIS TO BE READ IN JAVASCRIPT
+                ViewBag.token = token;
+                return View(model);
+            }
+            TempData["message"] = "You need to login";
+            return RedirectToAction("Login", "Teachers");
         }
         public ActionResult GetLectures()
         {
